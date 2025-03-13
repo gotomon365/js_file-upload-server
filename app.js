@@ -1,6 +1,5 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
@@ -27,8 +26,8 @@ if (!fs.existsSync(UPLOAD_FOLDER)) {
 // Function to get the local IP address
 function getLocalIp() {
     const interfaces = os.networkInterfaces();
-    for (let interface in interfaces) {
-        for (let address of interfaces[interface]) {
+    for (let iface in interfaces) {
+        for (let address of interfaces[iface]) {
             if (address.family === 'IPv4' && !address.internal) {
                 return address.address;
             }
@@ -75,33 +74,51 @@ app.get('/', (req, res) => {
                 button:hover {
                     background-color: #45a049;
                 }
+                #file-list {
+                    margin-top: 20px;
+                }
             </style>
+            <script>
+                function updateFileList() {
+                    const input = document.querySelector('input[type="file"]');
+                    const fileList = document.getElementById('file-list');
+                    fileList.innerHTML = ''; // Clear the current list
+                    for (const file of input.files) {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = file.name;
+                        fileList.appendChild(listItem);
+                    }
+                }
+            </script>
         </head>
         <body>
-            <h1>Upload a File</h1>
+            <h1>Upload Files</h1>
             <p>Connect to the server using the following IP address:</p>
             <h2>http://${ipAddress}:${PORT}/</h2>
             <form action="/upload" method="post" enctype="multipart/form-data">
                 <label class="custom-file-upload">
-                    Choose File
-                    <input type="file" name="file" required>
+                    Choose Files
+                    <input type="file" name="files" multiple required onchange="updateFileList()">
                 </label>
                 <button type="submit">Upload</button>
             </form>
+            <ul id="file-list"></ul> <!-- List to display selected file names -->
         </body>
         </html>
     `);
 });
 
-// Handle file upload
-app.post('/upload', upload.single('file'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).send('No file uploaded.');
+// Handle multiple file uploads
+app.post('/upload', upload.array('files'), (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).send('No files uploaded.');
     }
-    res.send(`File ${req.file.originalname} uploaded successfully!`);
+    const uploadedFiles = req.files.map(file => file.originalname).join(', ');
+    res.send(`Files ${uploadedFiles} uploaded successfully!`);
 });
 
+let IP = getLocalIp();
 // Start the server
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server is running at http://<your-server-ip>:${PORT}`);
+    console.log(`Server is running at http://${IP}:${PORT}`);
 });
