@@ -1,7 +1,6 @@
 電腦先裝好 nodejs npm
 在專案資料夾內
 ```
-
 $ npm init -y
 $ npm install express multer
 ```
